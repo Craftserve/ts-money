@@ -1,40 +1,35 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const isNaN = require("lodash/isNaN");
-const isObject = require("lodash/isObject");
-const isString = require("lodash/isString");
-const isPlainObject = require("lodash/isPlainObject");
-const isFunction = require("lodash/isFunction");
+const lodash_1 = require("lodash");
 const currencies_1 = require("./lib/currencies");
 exports.Currencies = currencies_1.Currencies;
 let isInt = function (n) {
     return Number(n) === n && n % 1 === 0;
 };
 let decimalPlaces = function (num) {
-    let match = ("" + num).match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
-    if (!match) return 0;
-    return Math.max(
-        0,
-        (match[1] ? match[1].length : 0) - (match[2] ? +match[2] : 0)
-    );
+    let match = ('' + num).match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
+    if (!match)
+        return 0;
+    return Math.max(0, (match[1] ? match[1].length : 0) - (match[2] ? +match[2] : 0));
 };
 let assertSameCurrency = function (left, right) {
     if (left.currency !== right.currency)
-        throw new Error("Different currencies");
+        throw new Error('Different currencies');
 };
 let assertType = function (other) {
     if (!(other instanceof Money))
-        throw new TypeError("Instance of Money required");
+        throw new TypeError('Instance of Money required');
 };
 let assertOperand = function (operand) {
-    if (isNaN(parseFloat(operand)) && !isFinite(operand))
-        throw new TypeError("Operand must be a number");
+    if (lodash_1.isNaN(parseFloat(operand)) && !isFinite(operand))
+        throw new TypeError('Operand must be a number');
 };
 let getCurrencyObject = function (currency) {
     let currencyObj = currencies_1.Currencies[currency];
     if (currencyObj) {
         return currencyObj;
-    } else {
+    }
+    else {
         for (let key in currencies_1.Currencies) {
             if (key.toUpperCase() === currency.toUpperCase())
                 return currencies_1.Currencies[key];
@@ -42,7 +37,7 @@ let getCurrencyObject = function (currency) {
     }
 };
 function isAmountObject(amount) {
-    return isObject(amount);
+    return lodash_1.isObject(amount);
 }
 class Money {
     /**
@@ -55,9 +50,12 @@ class Money {
      * @constructor
      */
     constructor(amount, currency) {
-        if (isString(currency)) currency = getCurrencyObject(currency);
-        if (!isPlainObject(currency)) throw new TypeError("Invalid currency");
-        if (!isInt(amount)) throw new TypeError("Amount must be an integer");
+        if (lodash_1.isString(currency))
+            currency = getCurrencyObject(currency);
+        if (!lodash_1.isPlainObject(currency))
+            throw new TypeError('Invalid currency');
+        if (!isInt(amount))
+            throw new TypeError('Amount must be an integer');
         this.amount = amount;
         this.currency = currency.code;
         Object.freeze(this);
@@ -65,43 +63,38 @@ class Money {
     static fromInteger(amount, currency) {
         if (isAmountObject(amount)) {
             if (amount.amount === undefined || amount.currency === undefined)
-                throw new TypeError(
-                    "Missing required parameters amount,currency"
-                );
+                throw new TypeError('Missing required parameters amount,currency');
             currency = amount.currency;
             amount = amount.amount;
         }
         if (!isInt(amount))
-            throw new TypeError("Amount must be an integer value");
+            throw new TypeError('Amount must be an integer value');
         return new Money(amount, currency);
     }
     static fromDecimal(amount, currency, rounder) {
         if (isAmountObject(amount)) {
             if (amount.amount === undefined || amount.currency === undefined)
-                throw new TypeError(
-                    "Missing required parameters amount,currency"
-                );
+                throw new TypeError('Missing required parameters amount,currency');
             rounder = currency;
             currency = amount.currency;
             amount = amount.amount;
         }
-        if (isString(currency)) currency = getCurrencyObject(currency);
-        if (!isPlainObject(currency)) throw new TypeError("Invalid currency");
+        if (lodash_1.isString(currency))
+            currency = getCurrencyObject(currency);
+        if (!lodash_1.isPlainObject(currency))
+            throw new TypeError('Invalid currency');
         if (rounder === undefined) {
             let decimals = decimalPlaces(amount);
             if (decimals > currency.decimal_digits)
-                throw new Error(
-                    `The currency ${currency.code} supports only` +
-                        ` ${currency.decimal_digits} decimal digits`
-                );
+                throw new Error(`The currency ${currency.code} supports only` +
+                    ` ${currency.decimal_digits} decimal digits`);
             rounder = Math.round;
-        } else {
-            if (
-                ["round", "floor", "ceil"].indexOf(rounder) === -1 &&
-                typeof rounder !== "function"
-            )
-                throw new TypeError("Invalid parameter rounder");
-            if (isString(rounder)) rounder = Math[rounder];
+        }
+        else {
+            if (['round', 'floor', 'ceil'].indexOf(rounder) === -1 && typeof rounder !== 'function')
+                throw new TypeError('Invalid parameter rounder');
+            if (lodash_1.isString(rounder))
+                rounder = Math[rounder];
         }
         let precisionMultiplier = Math.pow(10, currency.decimal_digits);
         let resultAmount = amount * precisionMultiplier;
@@ -117,7 +110,8 @@ class Money {
     equals(other) {
         let self = this;
         assertType(other);
-        return self.amount === other.amount && self.currency === other.currency;
+        return self.amount === other.amount &&
+            self.currency === other.currency;
     }
     /**
      * Adds the two objects together creating a new Money instance that holds the result of the operation.
@@ -151,7 +145,8 @@ class Money {
      * @returns {Money}
      */
     multiply(multiplier, fn) {
-        if (!isFunction(fn)) fn = Math.round;
+        if (!lodash_1.isFunction(fn))
+            fn = Math.round;
         assertOperand(multiplier);
         let amount = fn(this.amount * multiplier);
         return new Money(amount, this.currency);
@@ -164,7 +159,8 @@ class Money {
      * @returns {Money}
      */
     divide(divisor, fn) {
-        if (!isFunction(fn)) fn = Math.round;
+        if (!lodash_1.isFunction(fn))
+            fn = Math.round;
         assertOperand(divisor);
         let amount = fn(this.amount / divisor);
         return new Money(amount, this.currency);
@@ -184,7 +180,7 @@ class Money {
             total += ratio;
         });
         ratios.forEach(function (ratio) {
-            let share = Math.floor((self.amount * ratio) / total);
+            let share = Math.floor(self.amount * ratio / total);
             results.push(new Money(share, self.currency));
             remainder -= share;
         });
@@ -204,7 +200,8 @@ class Money {
         let self = this;
         assertType(other);
         assertSameCurrency(self, other);
-        if (self.amount === other.amount) return 0;
+        if (self.amount === other.amount)
+            return 0;
         return self.amount > other.amount ? 1 : -1;
     }
     /**
@@ -282,9 +279,7 @@ class Money {
      */
     toString() {
         let currency = getCurrencyObject(this.currency);
-        return (this.amount / Math.pow(10, currency.decimal_digits)).toFixed(
-            currency.decimal_digits
-        );
+        return (this.amount / Math.pow(10, currency.decimal_digits)).toFixed(currency.decimal_digits);
     }
     /**
      * Returns a serialised version of the instance.
@@ -294,7 +289,7 @@ class Money {
     toJSON() {
         return {
             amount: this.amount,
-            currency: this.currency,
+            currency: this.currency
         };
     }
     /**
